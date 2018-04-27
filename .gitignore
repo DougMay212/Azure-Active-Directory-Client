@@ -28,3 +28,9 @@
 /.mvn/
 mvnw
 mvnw.cmd
+
+### AngularJS Generated Files ###
+/node_modules/
+/npm/
+/node/
+/src/main/resources/static/dist/
