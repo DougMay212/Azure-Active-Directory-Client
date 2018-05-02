@@ -31,7 +31,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
 	protected void configure(HttpSecurity http) throws Exception {
 		http.antMatcher("/**").authorizeRequests()
-                .antMatchers("/login**", "/loggedout**", "/static/**", "/js/*.js", "/css/*.css").permitAll()
+                .antMatchers("/login**", "/loggedout**", "/static/**", "/static/js/*.js", "/static/css/*.css").permitAll()
                 .anyRequest().authenticated().and()
                 .exceptionHandling().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login/github")).and()
                 .logout().logoutSuccessUrl("/loggedout").permitAll().and()

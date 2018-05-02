@@ -12,12 +12,4 @@ function AppController($scope, $http) {
     $scope.$on('$viewContentLoaded', function () {
         console.log('AppController:viewContentLoaded');
     });
-
-    $scope.logout = function () {
-        console.log('Logging out...');
-        $http.post('/logout', '').then(function () {
-            console.log('Successfully logged out');
-            window.location.href = "loggedout";
-        });
-    }
 }

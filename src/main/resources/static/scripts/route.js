@@ -33,5 +33,15 @@ function routes($stateProvider, $urlRouterProvider) {
                     }
                 }
             }
-        });
+        })
+        .state('logout', {
+            url: '/logout',
+            views: {
+                'content@': {
+                    templateUrl: '/views/loggedout.html',
+                    controller: 'LogoutController',
+                    controllerAs: 'logout'
+                }
+            }
+        })
 }

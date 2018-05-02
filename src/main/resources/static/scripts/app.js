@@ -11,4 +11,5 @@ angular.module('oauthclient', ['ui.router', 'views', 'spinner'])
 require('route');
 require('app.controller');
 require('greeting.controller');
+require('logout.controller');
 require('greeting.service');
