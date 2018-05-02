@@ -30,11 +30,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
 	protected void configure(HttpSecurity http) throws Exception {
-		http.antMatcher("/**").authorizeRequests().antMatchers("/login**", "/static/**").permitAll().anyRequest()
-				.authenticated().and().exceptionHandling()
-				.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login/github")).and().logout()
-				.logoutSuccessUrl("/login/github").permitAll().and().csrf()
-				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
+		http.antMatcher("/**").authorizeRequests()
+                .antMatchers("/login**", "/loggedout**", "/static/**", "/js/*.js", "/css/*.css").permitAll()
+                .anyRequest().authenticated().and()
+                .exceptionHandling().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login/github")).and()
+                .logout().logoutSuccessUrl("/loggedout").permitAll().and()
+                .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
 				.addFilterBefore(ssoFilter(github(), "/login/github"), BasicAuthenticationFilter.class);
 	}
 

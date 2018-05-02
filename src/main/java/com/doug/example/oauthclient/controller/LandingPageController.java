@@ -15,4 +15,10 @@ public class LandingPageController {
         LOG.info("--- Base URL requested ---");
         return "index";
     }
+
+    @RequestMapping(value = "/loggedout")
+    public String loggedout() {
+        LOG.info("--- Log out page requested ---");
+        return "loggedout";
+    }
 }

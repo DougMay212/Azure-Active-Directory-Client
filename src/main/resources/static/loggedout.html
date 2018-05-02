@@ -13,15 +13,12 @@
 </head>
 <body ng-app="oauthclient">
     <header>
-        <div class="m-5" ng-controller="AppController">
-            <span>Oauth Client</span>
-            <button class="ml-5" ng-click="logout()">Logout</button>
+        <div class="m-5">
+            You have successfully logged out.
         </div>
     </header>
-    <div class="container">
-        <div id="spinner-container" ng-show="showSpinner">
-            <img src="img/spinner.gif" class="spinner-icon"/>
-        </div>
+    <div>
+        <a href="/login/github">Log back in...</a>
         <div data-ui-view="content"></div>
     </div>
     <script src="js/bundle.js"></script>
