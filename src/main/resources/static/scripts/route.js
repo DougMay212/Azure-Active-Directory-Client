@@ -15,7 +15,7 @@ function routes($stateProvider, $urlRouterProvider) {
             url: '/',
             views: {
                 'content': {
-                    templateUrl: '/views/login.html',
+                    templateUrl: '/views/landing-page.html',
                     controller: 'AppController',
                     controllerAs: 'ctrl'
                 }
