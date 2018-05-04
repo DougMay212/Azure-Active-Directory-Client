@@ -33,10 +33,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		http.antMatcher("/**").authorizeRequests().antMatchers("/login**").permitAll()
                 .anyRequest().authenticated().and()
                 .exceptionHandling().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint(
-                        "/login/github")).and()
+                        "/login/azure")).and()
                 .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
-				.addFilterBefore(ssoFilter(github(), "/login/github"), BasicAuthenticationFilter.class);
+				.addFilterBefore(ssoFilter(azure(), "/login/azure"), BasicAuthenticationFilter.class);
 	}
+
+
 
     private Filter ssoFilter(ClientResources client, String path) {
         OAuth2ClientAuthenticationProcessingFilter oAuth2ClientAuthenticationFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
@@ -58,8 +60,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    @ConfigurationProperties("github")
-    public ClientResources github() {
+    @ConfigurationProperties("azure")
+    public ClientResources azure() {
         return new ClientResources();
     }
 
