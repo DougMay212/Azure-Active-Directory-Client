@@ -1,4 +1,4 @@
-package com.doug.example.oauthclient.config;
+package com.doug.example.oauthclient.ui.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

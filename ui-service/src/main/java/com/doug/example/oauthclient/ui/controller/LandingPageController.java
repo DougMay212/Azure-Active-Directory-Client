@@ -1,4 +1,4 @@
-package com.doug.example.oauthclient.controller;
+package com.doug.example.oauthclient.ui.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

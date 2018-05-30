@@ -1,4 +1,4 @@
-package com.doug.example.oauthclient.config;
+package com.doug.example.oauthclient.ui.config;
 
 import javax.servlet.Filter;
 import org.springframework.beans.factory.annotation.Autowired;
