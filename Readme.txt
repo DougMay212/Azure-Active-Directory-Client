@@ -18,13 +18,12 @@ client secret into the applications.properties file.
 4) Set the Application's Reply URL
     a) Go to the Settins page, and click "Reply URLs"
     b) Edit the existing reply URL to read "http://localhost/login/azure"
-    c) Add an additional reply URL for the microservice: "http://localhost:8090/microservice/login/azure"
 5) Create a client secret
     a) Go to the Settings page, and click "Keys"
     b) Give the key a name (Eg. "oauth2-key") and select a duration. Leave the value cell blank.
-    c) Click "Save" and copy the generated value to the application.properties files' client.secret property.
+    c) Click "Save" and copy the generated value to the ui-service application.properties file's client.secret property.
 6) Copy the client ID to the Properies file
     a) Go to the Settings page, and find the Application ID
-    b) Copy the Application ID value to the application.properties files' client ID property.
+    b) Copy the Application ID value to the ui-service application.properties file's client ID property.
 
 
