@@ -1,9 +1,16 @@
 package com.doug.example.oauthclient.microservice.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyFactory;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 import java.util.Map;
 import javax.servlet.FilterChain;
@@ -79,6 +86,25 @@ public class AzureJwtFilter extends GenericFilterBean {
             JsonWebKey jsonWebKey = publicKeySelector.select(
                     signature, publicKeySet.getJsonWebKeys());
             signature.setKey(jsonWebKey.getKey());
+
+            BigInteger modulus = new BigInteger(1, Base64.getUrlDecoder().decode(
+                    publicKeySetJson.replaceAll("^(.*)("+jsonWebKey.getKeyId()+")", "$2")
+                            .replaceAll("^((?!\"n\").)*\"n\":\"", "")
+                            .replaceAll("\\\".*", "")));
+            BigInteger exponent = new BigInteger(1, Base64.getUrlDecoder().decode(
+                    publicKeySetJson.replaceAll("^(.*)("+jsonWebKey.getKeyId()+")", "$2")
+                            .replaceAll("^((?!\"e\").)*\"e\":\"", "")
+                            .replaceAll("\\\".*", "")));
+            try {
+                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(modulus, exponent);
+                RSAPublicKey publicKey = (RSAPublicKey)keyFactory.generatePublic(publicKeySpec);
+                Jws<Claims> claims = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(authorizationToken);
+                LOG.info(claims.getSignature());
+            } catch (Exception e) {
+                LOG.error("Backup Plan failed.", e);
+            }
+
 
             if(!signature.verifySignature()) {
                 throw new RuntimeException("JSON Web Token Signature Invalid");
