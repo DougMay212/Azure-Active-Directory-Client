@@ -54,14 +54,14 @@ public class SimpleRestController {
 
         HttpHeaders headers = new HttpHeaders();
 
-        Enumeration<String> requestHeaderNames = request.getHeaderNames();
+        /*Enumeration<String> requestHeaderNames = request.getHeaderNames();
         while(requestHeaderNames.hasMoreElements()) {
             String headerName = requestHeaderNames.nextElement();
             String headerValue = request.getHeader(headerName);
             headers.add(headerName, headerValue);
-        }
+        }*/
 
-        headers.add("Authorization", "token " + authToken);
+        headers.add("Authorization", "Bearer " + authToken);
 
         return restTemplate.exchange(microserviceUri, method,
                 new HttpEntity<>("", headers), String.class);

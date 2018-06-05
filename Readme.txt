@@ -24,6 +24,6 @@ client secret into the applications.properties file.
     c) Click "Save" and copy the generated value to the ui-service application.properties file's client.secret property.
 6) Copy the client ID to the Properies file
     a) Go to the Settings page, and find the Application ID
-    b) Copy the Application ID value to the ui-service application.properties file's client ID property.
+    b) Copy the Application ID value to the application.properties files' client ID properties.
 
 

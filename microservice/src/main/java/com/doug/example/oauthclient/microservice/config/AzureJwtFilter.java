@@ -1,125 +1,70 @@
 package com.doug.example.oauthclient.microservice.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.Jwts;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.KeyFactory;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.RSAPublicKeySpec;
-import java.util.Base64;
-import java.util.Map;
 import javax.servlet.FilterChain;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import org.jose4j.jwa.AlgorithmConstraints;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.JsonWebKeySet;
-import org.jose4j.jwk.VerificationJwkSelector;
-import org.jose4j.jws.AlgorithmIdentifiers;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.oauth2.common.exceptions.InvalidTokenException;
-import org.springframework.web.client.RestOperations;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.filter.GenericFilterBean;
+import javax.servlet.http.HttpServletResponse;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.UserInfoTokenServices;
+import org.springframework.security.authentication.AuthenticationDetailsSource;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
+import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetailsSource;
+import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-public class AzureJwtFilter extends GenericFilterBean {
-    private final static Logger LOG = LoggerFactory.getLogger(AzureJwtFilter.class);
+public class AzureJwtFilter extends AbstractAuthenticationProcessingFilter {
 
-    private final static String AUTHORIZATION_HEADER_NAME = "Authorization";
-    private final static String TOKEN_PREFIX = "token ";
-    private final static int METADATA_INDEX = 0;
-    private final static int BODY_INDEX = 1;
-    private final static int SIGNATURE_INDEX = 2;
+    private static final String USER_INFO_URL = "https://graph.microsoft.com/v1.0/me/";
+    private static final String AUTHORIZATION_HEADER_NAME = "Authorization";
+    private static final String TOKEN_PREFIX = "bearer ";
 
-    private String azurePublicKeyUrl = "https://login.microsoftonline.com/lowes.onmicrosoft.com/discovery/v2.0/keys";
+    private UserInfoTokenServices tokenServices;
+    private AuthenticationDetailsSource<HttpServletRequest, ?> authenticationDetailsSource =
+            new OAuth2AuthenticationDetailsSource();
 
-    private RestOperations restTemplate = new RestTemplate();
-    private ObjectMapper objectMapper = new ObjectMapper();
-    private VerificationJwkSelector publicKeySelector = new VerificationJwkSelector();
+    public AzureJwtFilter(String pattern, String clientId) {
+        super(new AntPathRequestMatcher(pattern));
+        tokenServices = new UserInfoTokenServices(USER_INFO_URL, clientId);
+        this.setAuthenticationDetailsSource(authenticationDetailsSource);
+    }
+
+    public Authentication attemptAuthentication(HttpServletRequest request,
+                                                HttpServletResponse response)
+            throws AuthenticationException, IOException, ServletException {
+        if (request.getHeader(AUTHORIZATION_HEADER_NAME) == null ||
+                !request.getHeader(AUTHORIZATION_HEADER_NAME).toLowerCase().startsWith(TOKEN_PREFIX)) {
+            throw new BadCredentialsException("Could not obtain Access Token from Authorization Header");
+        }
+        String base64AccessToken = request.getHeader(AUTHORIZATION_HEADER_NAME).substring(TOKEN_PREFIX.length());
+        OAuth2AccessToken accessToken = new DefaultOAuth2AccessToken(base64AccessToken);
+        OAuth2Authentication authentication = this.tokenServices.loadAuthentication(accessToken.getValue());
+        if (this.authenticationDetailsSource != null) {
+            request.setAttribute(OAuth2AuthenticationDetails.ACCESS_TOKEN_VALUE, accessToken.getValue());
+            request.setAttribute(OAuth2AuthenticationDetails.ACCESS_TOKEN_TYPE, accessToken.getTokenType());
+            authentication.setDetails(this.authenticationDetailsSource.buildDetails(request));
+        }
+        return authentication;
+    }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) {
+    protected void successfulAuthentication(HttpServletRequest request,
+                                            HttpServletResponse response,
+                                            FilterChain chain,
+                                            Authentication authResult)
+            throws IOException, ServletException {
+        SecurityContextHolder.getContext().setAuthentication(authResult);
+    }
 
-        HttpServletRequest httpRequest = (HttpServletRequest)request;
-        if(httpRequest.getHeader(AUTHORIZATION_HEADER_NAME) == null ||
-                !httpRequest.getHeader(AUTHORIZATION_HEADER_NAME).startsWith(TOKEN_PREFIX) ) {
-            throw new AuthenticationCredentialsNotFoundException("Missing or Invalid Authorization Header in Request");
-        }
-
-        String authorizationToken = httpRequest.getHeader(AUTHORIZATION_HEADER_NAME).replace(TOKEN_PREFIX, "");
-        String[] tokenParts = authorizationToken.split("\\.");
-        if(tokenParts.length != 3) {
-            throw new InvalidTokenException("The authorization token did not have 3 parts");
-        }
-        try {
-            byte[] base64DecodedMetadata = Base64.getDecoder().decode(tokenParts[METADATA_INDEX]);
-            byte[] base64DecodedBody = Base64.getDecoder().decode(tokenParts[BODY_INDEX]);
-            Map<String, String> jwtMetadata = objectMapper.readValue(base64DecodedMetadata, Map.class);
-            Map<String, String> jwtBody = objectMapper.readValue(base64DecodedBody, Map.class);
-            LOG.info("JWT Metadata (size {}): {}", jwtMetadata.size(), new String(base64DecodedMetadata));
-            LOG.info("JWT Body (size {}): {}", jwtBody.size(), new String(base64DecodedBody));
-        } catch (IOException e) {
-            LOG.error("Malformed Azure Json Web Token");
-        }
-
-        try {
-            JsonWebSignature signature = new JsonWebSignature();
-
-            String publicKeySetJson = restTemplate.getForObject(
-                    new URI(azurePublicKeyUrl), String.class);
-            JsonWebKeySet publicKeySet = new JsonWebKeySet(publicKeySetJson);
-
-            signature.setAlgorithmConstraints(new AlgorithmConstraints(
-                    AlgorithmConstraints.ConstraintType.WHITELIST,
-                    AlgorithmIdentifiers.RSA_USING_SHA256));
-            signature.setCompactSerialization(authorizationToken);
-            JsonWebKey jsonWebKey = publicKeySelector.select(
-                    signature, publicKeySet.getJsonWebKeys());
-            signature.setKey(jsonWebKey.getKey());
-
-            BigInteger modulus = new BigInteger(1, Base64.getUrlDecoder().decode(
-                    publicKeySetJson.replaceAll("^(.*)("+jsonWebKey.getKeyId()+")", "$2")
-                            .replaceAll("^((?!\"n\").)*\"n\":\"", "")
-                            .replaceAll("\\\".*", "")));
-            BigInteger exponent = new BigInteger(1, Base64.getUrlDecoder().decode(
-                    publicKeySetJson.replaceAll("^(.*)("+jsonWebKey.getKeyId()+")", "$2")
-                            .replaceAll("^((?!\"e\").)*\"e\":\"", "")
-                            .replaceAll("\\\".*", "")));
-            try {
-                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-                RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(modulus, exponent);
-                RSAPublicKey publicKey = (RSAPublicKey)keyFactory.generatePublic(publicKeySpec);
-                Jws<Claims> claims = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(authorizationToken);
-                LOG.info(claims.getSignature());
-            } catch (Exception e) {
-                LOG.error("Backup Plan failed.", e);
-            }
-
-
-            if(!signature.verifySignature()) {
-                throw new RuntimeException("JSON Web Token Signature Invalid");
-            }
-        } catch (URISyntaxException e) {
-            LOG.error("Invalid URL \"" + azurePublicKeyUrl + "\"", e);
-        } catch (JoseException e) {
-            LOG.error("An error occurred when validating the JWT signature", e);
-            throw new RuntimeException(e);
-        }
-
-        try {
-            filterChain.doFilter(request, response);
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+    @Override
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
+        SecurityContextHolder.clearContext();
+        throw new BadCredentialsException("Token rejected when retrieving user info");
     }
 }
