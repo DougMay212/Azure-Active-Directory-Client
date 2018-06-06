@@ -8,7 +8,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
@@ -51,15 +50,22 @@ public class AzureJwtFilter extends GenericFilterBean {
 
         if (request.getHeader(AUTHORIZATION_HEADER_NAME) == null ||
                 !request.getHeader(AUTHORIZATION_HEADER_NAME).toLowerCase().startsWith(TOKEN_PREFIX)) {
-            throw new BadCredentialsException("Could not obtain Access Token from Authorization Header");
+            request.setAttribute("ERROR", "Could not obtain Access Token from Authorization Header");
+            chain.doFilter(request, response);
+            return;
         }
         String base64AccessToken = request.getHeader(AUTHORIZATION_HEADER_NAME).substring(TOKEN_PREFIX.length());
-        OAuth2AccessToken accessToken = new DefaultOAuth2AccessToken(base64AccessToken);
-        OAuth2Authentication authentication = this.tokenServices.loadAuthentication(accessToken.getValue());
-        request.setAttribute(OAuth2AuthenticationDetails.ACCESS_TOKEN_VALUE, accessToken.getValue());
-        request.setAttribute(OAuth2AuthenticationDetails.ACCESS_TOKEN_TYPE, accessToken.getTokenType());
-        authentication.setDetails(this.authenticationDetailsSource.buildDetails(request));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        try {
+            OAuth2AccessToken accessToken = new DefaultOAuth2AccessToken(base64AccessToken);
+            OAuth2Authentication authentication = this.tokenServices.loadAuthentication(accessToken.getValue());
+            request.setAttribute(OAuth2AuthenticationDetails.ACCESS_TOKEN_VALUE, accessToken.getValue());
+            request.setAttribute(OAuth2AuthenticationDetails.ACCESS_TOKEN_TYPE, accessToken.getTokenType());
+            authentication.setDetails(this.authenticationDetailsSource.buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (Exception e) {
+            request.setAttribute("ERROR", "External validation of access token failed");
+            request.setAttribute("ERROR_MESSAGE", e.getMessage());
+        }
         chain.doFilter(request, response);
     }
 }
