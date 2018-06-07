@@ -5,8 +5,14 @@
 
 	<groupId>com.doug.example</groupId>
 	<artifactId>oauth-client</artifactId>
-	<version>0.0.1</version>
-	<packaging>jar</packaging>
+	<version>0.0.2</version>
+	<modules>
+		<module>microservice</module>
+		<module>ui-service</module>
+	</modules>
+	<packaging>pom</packaging>
+
+	<!--hey doug: 351a2c4f-ba9f-458e-9bb0-4f55569e5654-->
 
 	<name>oauth-client</name>
 	<description>Demo project for Spring Boot</description>
@@ -18,98 +24,13 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>1.8</java.version>
-		<gulp.output.directory>target/classes/static</gulp.output.directory>
-	</properties>
-
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.security.oauth.boot</groupId>
-			<artifactId>spring-security-oauth2-autoconfigure</artifactId>
-			<version>2.0.0.RELEASE</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-
 	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<version>2.1.1</version>
 				<configuration>
-					<failOnMissingWebXml>false</failOnMissingWebXml>
-					<webResources>
-						<resource>
-							<directory>${gulp.output.directory}</directory>
-						</resource>
-					</webResources>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>com.github.eirslett</groupId>
-				<artifactId>frontend-maven-plugin</artifactId>
-				<version>1.4</version>
-
-				<executions>
-					<execution>
-						<id>install node and npm</id>
-						<goals>
-							<goal>install-node-and-npm</goal>
-						</goals>
-						<configuration>
-							<nodeVersion>v7.9.0</nodeVersion>
-							<npmVersion>4.6.1</npmVersion>
-						</configuration>
-					</execution>
-
-					<execution>
-						<id>npm install</id>
-						<goals>
-							<goal>npm</goal>
-						</goals>
-						<configuration>
-							<arguments>install</arguments>
-						</configuration>
-					</execution>
-
-					<execution>
-						<id>gulp build</id>
-						<goals>
-							<goal>gulp</goal>
-						</goals>
-						<phase>generate-resources</phase>
-						<configuration>
-							<arguments>build-jar</arguments>
-						</configuration>
-					</execution>
-				</executions>
-				<configuration>
-					<environmentVariables>
-						<!-- The following parameters create an NPM sandbox for CI -->
-						<NPM_CONFIG_PREFIX>${basedir}/npm</NPM_CONFIG_PREFIX>
-						<NPM_CONFIG_TMP>${project.build.directory}/npmtmp</NPM_CONFIG_TMP>
-					</environmentVariables>
+					<skip>true</skip>
 				</configuration>
 			</plugin>
 		</plugins>
