@@ -17,12 +17,14 @@ function HttpSpinner($q, $rootScope) {
             if((--numRequests) == 0 && $rootScope.showSpinner) {
                 $rootScope.showSpinner = false;
             }
+            console.log('Response <' + JSON.stringify(response) + '>');
             return response;
         },
         'responseError': function (rejection) {
             if((--numRequests) == 0 && $rootScope.showSpinner) {
                 $rootScope.showSpinner = false;
             }
+            console.log('Response Error <' + JSON.stringify(rejection) + '>');
             return $q.reject(rejection);
         }
     };

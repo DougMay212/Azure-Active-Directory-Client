@@ -18,6 +18,7 @@ import org.springframework.security.oauth2.client.filter.OAuth2ClientContextFilt
 import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeResourceDetails;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
@@ -35,10 +36,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .exceptionHandling().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint(
                         "/login/azure")).and()
                 .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
-				.addFilterBefore(ssoFilter(azure(), "/login/azure"), BasicAuthenticationFilter.class);
+				.addFilterBefore(ssoFilter(azure(), "/login/azure"), BasicAuthenticationFilter.class)
+                .addFilterAfter(new ExpiredAccessTokenFilter("/login**"), LogoutFilter.class);
 	}
 
-
+    @Bean
+    public FilterRegistrationBean<OAuth2ClientContextFilter> oauth2ClientFilterRegistration(OAuth2ClientContextFilter filter) {
+        FilterRegistrationBean<OAuth2ClientContextFilter> registration = new FilterRegistrationBean<OAuth2ClientContextFilter>();
+        registration.setFilter(filter);
+        registration.setOrder(-100);
+        return registration;
+    }
 
     private Filter ssoFilter(ClientResources client, String path) {
         OAuth2ClientAuthenticationProcessingFilter oAuth2ClientAuthenticationFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
@@ -49,14 +57,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         tokenServices.setRestTemplate(oAuth2RestTemplate);
         oAuth2ClientAuthenticationFilter.setTokenServices(tokenServices);
         return oAuth2ClientAuthenticationFilter;
-    }
-
-    @Bean
-    public FilterRegistrationBean<OAuth2ClientContextFilter> oauth2ClientFilterRegistration(OAuth2ClientContextFilter filter) {
-        FilterRegistrationBean<OAuth2ClientContextFilter> registration = new FilterRegistrationBean<OAuth2ClientContextFilter>();
-        registration.setFilter(filter);
-        registration.setOrder(-100);
-        return registration;
     }
 
     @Bean

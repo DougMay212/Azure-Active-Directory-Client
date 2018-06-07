@@ -53,14 +53,6 @@ public class SimpleRestController {
         LOG.info("Sending request to microservice at {} with authToken {}", microserviceUri.toString(), authToken);
 
         HttpHeaders headers = new HttpHeaders();
-
-        /*Enumeration<String> requestHeaderNames = request.getHeaderNames();
-        while(requestHeaderNames.hasMoreElements()) {
-            String headerName = requestHeaderNames.nextElement();
-            String headerValue = request.getHeader(headerName);
-            headers.add(headerName, headerValue);
-        }*/
-
         headers.add("Authorization", "Bearer " + authToken);
 
         return restTemplate.exchange(microserviceUri, method,
